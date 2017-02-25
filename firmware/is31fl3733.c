@@ -49,42 +49,46 @@ void i2c_setup()
 void dotsmatrix_setup()
 {
     // enable pin
-    gpio_mode_setup(DOTSMATRIX_SDB_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, DOTSMATRIX_SDB_PIN);
-    gpio_set(DOTSMATRIX_SDB_PORT, DOTSMATRIX_SDB_PIN);
+    gpio_mode_setup(IS_SDB_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, IS_SDB_PIN);
+    gpio_set(IS_SDB_PORT, IS_SDB_PIN);
 
     i2c_setup();
 
 	delay(100);
 	// software enable
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTSMATRIX_CR, DOTSMATRIX_CR_PG3);
+    dotsmatrix_write(IS_CR, IS_CR_PG3);
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTMATRIX_PG3_CFG, DOTMATRIX_PG3_CFG_SSD_EN|DOTMATRIX_PG3_CFG_BEN_EN);
+    dotsmatrix_write(IS_PG3_CFG, IS_PG3_CFG_SSD_EN|IS_PG3_CFG_BEN_EN);
 
 	// set global current
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTSMATRIX_CR, DOTSMATRIX_CR_PG3);
+    dotsmatrix_write(IS_CR, IS_CR_PG3);
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTMATRIX_PG3_GCC, 0x40);
+//    dotsmatrix_write(IS_PG3_GCC, 0x40);
+//    dotsmatrix_write(IS_PG3_GCC, 0x7F);
+    dotsmatrix_write(IS_PG3_GCC, 0xFF);
 
 	// set pullup/down
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTSMATRIX_CR, DOTSMATRIX_CR_PG3);
+    dotsmatrix_write(IS_CR, IS_CR_PG3);
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTMATRIX_PG3_SW_PLUP, 0b111);
+    dotsmatrix_write(IS_PG3_SW_PLUP, 0b111);
 
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTSMATRIX_CR, DOTSMATRIX_CR_PG3);
+    dotsmatrix_write(IS_CR, IS_CR_PG3);
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTMATRIX_PG3_CS_PLDN, 0b111);
+    dotsmatrix_write(IS_PG3_CS_PLDN, 0b111);
 
+
+    dotmatrix_led_set_abm1_breath_time(IS_PG3_ABC_T13_336S,IS_PG3_ABC_T24_000S,IS_PG3_ABC_T13_336S,IS_PG3_ABC_T24_000S);
 
 }
 
 uint8_t dotsmatrix_read(uint8_t reg)
 {
     uint8_t data[2];
-    read_i2c(I2C1, DOTSMATRIX_ADDR, reg, 2, data);
+    read_i2c(I2C1, IS_ADDR, reg, 2, data);
     return data[0];
 }
 
@@ -93,21 +97,21 @@ void dotsmatrix_write(uint8_t reg, uint8_t v)
     uint8_t data[2];
     data[0] = v;
     data[1] = 0;
-    write_i2c(I2C1, DOTSMATRIX_ADDR, reg, 2, data);
+    write_i2c(I2C1, IS_ADDR, reg, 2, data);
 }
 
 void dotsmatrix_write_enable()
 {
-    dotsmatrix_write(DOTSMATRIX_CRWL, 0xC5);
+    dotsmatrix_write(IS_CRWL, 0xC5);
 }
 
 uint16_t dotsmatrix_get_open_state(uint8_t line)
 {
     uint16_t r = 0;
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTSMATRIX_CR, DOTSMATRIX_CR_PG0);
-    r |= dotsmatrix_read(DOTSMATRIX_PG0_OR + line * 2);
-    r |= dotsmatrix_read(DOTSMATRIX_PG0_OR + line * 2 + 1) << 8;
+    dotsmatrix_write(IS_CR, IS_CR_PG0);
+    r |= dotsmatrix_read(IS_PG0_OR + line * 2);
+    r |= dotsmatrix_read(IS_PG0_OR + line * 2 + 1) << 8;
     return r;
 }
 
@@ -115,9 +119,9 @@ uint16_t dotsmatrix_get_short_state(uint8_t line)
 {
     uint16_t r = 0;
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTSMATRIX_CR, DOTSMATRIX_CR_PG0);
-    r |= dotsmatrix_read(DOTSMATRIX_PG0_SR + line * 2);
-    r |= dotsmatrix_read(DOTSMATRIX_PG0_SR + line * 2 + 1) << 8;
+    dotsmatrix_write(IS_CR, IS_CR_PG0);
+    r |= dotsmatrix_read(IS_PG0_SR + line * 2);
+    r |= dotsmatrix_read(IS_PG0_SR + line * 2 + 1) << 8;
     return r;
 }
 
@@ -126,30 +130,46 @@ uint16_t led_state[5] = {0,0,0,0,0};
 void dotsmatrix_led_enable(uint8_t line, uint8_t col)
 {
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTSMATRIX_CR, DOTSMATRIX_CR_PG0);
+    dotsmatrix_write(IS_CR, IS_CR_PG0);
     led_state[line] = led_state[line] | (1 << (col));
-    dotsmatrix_write(DOTSMATRIX_PG0_OO + (line << 1) + (col >> 3), led_state[line] >> ((col >> 3) << 3));
+    dotsmatrix_write(IS_PG0_OO + (line << 1) + (col >> 3), led_state[line] >> ((col >> 3) << 3));
 }
 
 void dotsmatrix_led_disable(uint8_t line, uint8_t col)
 {
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTSMATRIX_CR, DOTSMATRIX_CR_PG0);
-    dotsmatrix_write_enable();
+    dotsmatrix_write(IS_CR, IS_CR_PG0);
     led_state[line] = led_state[line] & ~(1 << (col));
-    dotsmatrix_write(DOTSMATRIX_PG0_OO + (line << 1) + (col >> 3), led_state[line] >> ((col >> 3) << 3));
+    dotsmatrix_write(IS_PG0_OO + (line << 1) + (col >> 3), led_state[line] >> ((col >> 3) << 3));
 }
 
 void dotsmatrix_led_set_pwm(uint8_t line, uint8_t col, uint8_t v)
 {
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTSMATRIX_CR, DOTSMATRIX_CR_PG1);
+    dotsmatrix_write(IS_CR, IS_CR_PG1);
     dotsmatrix_write((line << 4) + col, v);
 }
 
 void dotsmatrix_led_set_breath(uint8_t line, uint8_t col, uint8_t v)
 {
     dotsmatrix_write_enable();
-    dotsmatrix_write(DOTSMATRIX_CR, DOTSMATRIX_CR_PG2);
+    dotsmatrix_write(IS_CR, IS_CR_PG2);
     dotsmatrix_write((line << 4) + col, v);
+}
+
+void dotmatrix_led_time_update() {
+    dotsmatrix_write_enable();
+    dotsmatrix_write(IS_CR, IS_CR_PG3);
+    dotsmatrix_write(IS_PG3_TU, 0);
+}
+
+void dotmatrix_led_set_abm1_breath_time(uint8_t t1, uint8_t t2, uint8_t t3, uint8_t t4) {
+    dotsmatrix_write_enable();
+    dotsmatrix_write(IS_CR, IS_CR_PG3);
+    dotsmatrix_write(IS_PG3_ABC_ABM1_R1, t1|t2);
+    dotsmatrix_write_enable();
+    dotsmatrix_write(IS_CR, IS_CR_PG3);
+    dotsmatrix_write(IS_PG3_ABC_ABM1_R2, t3|t4);
+    dotmatrix_led_time_update();
+
 }

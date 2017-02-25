@@ -260,6 +260,8 @@ enum {
     KEY_RIGHT_SHIFT,
     KEY_RIGHT_ALT,
     KEY_RIGHT_GUI,
+    // RESERVED
+    KEY_FN
 };
 
 // Modifier bit flags as defined for the boot keyboard.
